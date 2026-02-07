@@ -6,6 +6,7 @@ import Link from "next/link";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
 import { DeleteProjectButton } from "./delete-project-button";
+import { NotificationSettings } from "@/components/notification-settings";
 
 export default async function ProjectDetailPage({
   params,
@@ -147,6 +148,16 @@ export default async function ProjectDetailPage({
           </table>
         </div>
       )}
+
+      <div className="mt-8">
+        <h2 className="mb-4 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+          Notifications
+        </h2>
+        <NotificationSettings
+          projectId={projectId}
+          userEmail={session.user.email}
+        />
+      </div>
     </div>
   );
 }
