@@ -2,6 +2,25 @@
 
 import { useRouter, useParams } from "next/navigation";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function EditEndpointPage() {
   const router = useRouter();
@@ -9,9 +28,8 @@ export default function EditEndpointPage() {
   const [url, setUrl] = useState("");
   const [name, setName] = useState("");
   const [method, setMethod] = useState("GET");
-  const [checkInterval, setCheckInterval] = useState(60);
+  const [checkInterval, setCheckInterval] = useState("60");
   const [isActive, setIsActive] = useState(true);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -21,14 +39,13 @@ export default function EditEndpointPage() {
         setUrl(data.url || "");
         setName(data.name || "");
         setMethod(data.method || "GET");
-        setCheckInterval(data.checkInterval || 60);
+        setCheckInterval(String(data.checkInterval || 60));
         setIsActive(data.isActive ?? true);
       });
   }, [params.projectId, params.endpointId]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError("");
     setLoading(true);
 
     const res = await fetch(
@@ -36,124 +53,116 @@ export default function EditEndpointPage() {
       {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, name, method, checkInterval, isActive }),
-      }
+        body: JSON.stringify({
+          url,
+          name,
+          method,
+          checkInterval: Number(checkInterval),
+          isActive,
+        }),
+      },
     );
 
     if (!res.ok) {
       const data = await res.json();
-      setError(data.error || "Something went wrong");
+      toast.error(data.error || "Failed to update endpoint");
       setLoading(false);
       return;
     }
 
-    router.push(`/dashboard/projects/${params.projectId}/endpoints/${params.endpointId}`);
+    toast.success("Endpoint updated");
+    router.push(
+      `/dashboard/projects/${params.projectId}/endpoints/${params.endpointId}`,
+    );
   }
 
   return (
-    <div className="mx-auto max-w-md">
-      <h1 className="mb-6 text-xl font-semibold text-zinc-900 dark:text-zinc-50">Edit Endpoint</h1>
+    <div className="mx-auto max-w-lg">
+      <Card>
+        <CardHeader>
+          <CardTitle>Edit Endpoint</CardTitle>
+          <CardDescription>Update your endpoint configuration.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950 dark:text-red-400">
-            {error}
-          </div>
-        )}
+            <div className="space-y-2">
+              <Label htmlFor="url">URL</Label>
+              <Input
+                id="url"
+                type="url"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                required
+              />
+            </div>
 
-        <div className="space-y-2">
-          <label htmlFor="name" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Name
-          </label>
-          <input
-            id="name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder:text-zinc-500 dark:focus:border-zinc-400 dark:focus:ring-zinc-400"
-          />
-        </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Method</Label>
+                <Select value={method} onValueChange={setMethod}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="GET">GET</SelectItem>
+                    <SelectItem value="POST">POST</SelectItem>
+                    <SelectItem value="HEAD">HEAD</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-        <div className="space-y-2">
-          <label htmlFor="url" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            URL
-          </label>
-          <input
-            id="url"
-            type="url"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            required
-            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:placeholder:text-zinc-500 dark:focus:border-zinc-400 dark:focus:ring-zinc-400"
-          />
-        </div>
+              <div className="space-y-2">
+                <Label>Check Interval</Label>
+                <Select value={checkInterval} onValueChange={setCheckInterval}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30">30 seconds</SelectItem>
+                    <SelectItem value="60">1 minute</SelectItem>
+                    <SelectItem value="300">5 minutes</SelectItem>
+                    <SelectItem value="600">10 minutes</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label htmlFor="method" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Method
-            </label>
-            <select
-              id="method"
-              value={method}
-              onChange={(e) => setMethod(e.target.value)}
-              className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:focus:border-zinc-400 dark:focus:ring-zinc-400"
-            >
-              <option value="GET">GET</option>
-              <option value="POST">POST</option>
-              <option value="HEAD">HEAD</option>
-            </select>
-          </div>
+            <div className="flex items-center gap-3 rounded-lg border p-3">
+              <Switch
+                id="isActive"
+                checked={isActive}
+                onCheckedChange={setIsActive}
+              />
+              <Label htmlFor="isActive" className="cursor-pointer">
+                Active (monitoring enabled)
+              </Label>
+            </div>
 
-          <div className="space-y-2">
-            <label htmlFor="interval" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Check Interval
-            </label>
-            <select
-              id="interval"
-              value={checkInterval}
-              onChange={(e) => setCheckInterval(Number(e.target.value))}
-              className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50 dark:focus:border-zinc-400 dark:focus:ring-zinc-400"
-            >
-              <option value={30}>30 seconds</option>
-              <option value={60}>1 minute</option>
-              <option value={300}>5 minutes</option>
-              <option value={600}>10 minutes</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <input
-            id="isActive"
-            type="checkbox"
-            checked={isActive}
-            onChange={(e) => setIsActive(e.target.checked)}
-            className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-700"
-          />
-          <label htmlFor="isActive" className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Active (monitoring enabled)
-          </label>
-        </div>
-
-        <div className="flex gap-3">
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
-          >
-            {loading ? "Saving..." : "Save Changes"}
-          </button>
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
+            <div className="flex gap-3 pt-2">
+              <Button type="submit" disabled={loading}>
+                {loading ? "Saving..." : "Save Changes"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => router.back()}
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

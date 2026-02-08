@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { Mail } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 type Channel = {
   id: string;
@@ -33,7 +36,6 @@ export function NotificationSettings({
     setToggling(true);
     try {
       if (!emailChannel) {
-        // Create the email channel
         const res = await fetch(`/api/projects/${projectId}/notifications`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -41,8 +43,8 @@ export function NotificationSettings({
         });
         const channel = await res.json();
         setEmailChannel(channel);
+        toast.success("Email notifications enabled");
       } else {
-        // Toggle existing channel
         const res = await fetch(
           `/api/projects/${projectId}/notifications/${emailChannel.id}`,
           {
@@ -53,6 +55,11 @@ export function NotificationSettings({
         );
         const channel = await res.json();
         setEmailChannel(channel);
+        toast.success(
+          channel.enabled
+            ? "Email notifications enabled"
+            : "Email notifications disabled",
+        );
       }
     } finally {
       setToggling(false);
@@ -62,37 +69,21 @@ export function NotificationSettings({
   const isEnabled = emailChannel?.enabled ?? false;
 
   return (
-    <div className="rounded-lg border border-zinc-200 dark:border-zinc-800">
-      <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-zinc-100 text-sm dark:bg-zinc-800">
-            @
-          </div>
-          <div>
-            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
-              Email
-            </p>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              {userEmail}
-            </p>
-          </div>
+    <div className="flex items-center justify-between rounded-lg border p-4">
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+          <Mail className="h-4 w-4 text-muted-foreground" />
         </div>
-        <button
-          onClick={toggleEmail}
-          disabled={loading || toggling}
-          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
-            isEnabled
-              ? "bg-zinc-900 dark:bg-zinc-50"
-              : "bg-zinc-200 dark:bg-zinc-700"
-          }`}
-        >
-          <span
-            className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow ring-0 transition-transform duration-200 dark:bg-zinc-900 ${
-              isEnabled ? "translate-x-5" : "translate-x-0"
-            }`}
-          />
-        </button>
+        <div>
+          <p className="text-sm font-medium">Email</p>
+          <p className="text-xs text-muted-foreground">{userEmail}</p>
+        </div>
       </div>
+      <Switch
+        checked={isEnabled}
+        onCheckedChange={toggleEmail}
+        disabled={loading || toggling}
+      />
     </div>
   );
 }

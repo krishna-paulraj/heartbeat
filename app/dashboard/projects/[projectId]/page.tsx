@@ -3,10 +3,13 @@ import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
+import { ChevronRight, Plus, Pencil } from "lucide-react";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
 import { DeleteProjectButton } from "./delete-project-button";
 import { NotificationSettings } from "@/components/notification-settings";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function ProjectDetailPage({
   params,
@@ -26,7 +29,6 @@ export default async function ProjectDetailPage({
 
   if (!project) notFound();
 
-  // Get latest ping for each endpoint
   const endpointsWithStatus = await Promise.all(
     project.endpoints.map(async (endpoint) => {
       const latestPing = await prisma.ping.findFirst({
@@ -44,120 +46,134 @@ export default async function ProjectDetailPage({
 
   return (
     <div>
+      {/* Breadcrumb */}
       <div className="mb-6">
-        <div className="flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400">
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <Link
             href="/dashboard"
-            className="hover:text-zinc-900 dark:hover:text-zinc-50"
+            className="hover:text-foreground transition-colors"
           >
             Projects
           </Link>
-          <span>/</span>
-          <span className="text-zinc-900 dark:text-zinc-50">
-            {project.name}
-          </span>
+          <ChevronRight className="h-3.5 w-3.5" />
+          <span className="text-foreground font-medium">{project.name}</span>
         </div>
-        <div className="mt-2 flex items-center justify-between">
+        <div className="mt-3 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+            <h1 className="text-2xl font-bold tracking-tight">
               {project.name}
             </h1>
             {project.description && (
-              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+              <p className="mt-1 text-sm text-muted-foreground">
                 {project.description}
               </p>
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Link
-              href={`/dashboard/projects/${projectId}/edit`}
-              className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-            >
-              Edit
-            </Link>
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/dashboard/projects/${projectId}/edit`}>
+                <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                Edit
+              </Link>
+            </Button>
             <DeleteProjectButton projectId={projectId} />
           </div>
         </div>
       </div>
 
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-          Endpoints ({project.endpoints.length})
-        </h2>
-        <Link
-          href={`/dashboard/projects/${projectId}/new-endpoint`}
-          className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
-        >
-          Add Endpoint
-        </Link>
-      </div>
+      {/* Endpoints */}
+      <Card>
+        <CardHeader className="flex-row items-center justify-between space-y-0 pb-4">
+          <CardTitle className="text-base">
+            Endpoints ({project.endpoints.length})
+          </CardTitle>
+          <Button size="sm" asChild>
+            <Link href={`/dashboard/projects/${projectId}/new-endpoint`}>
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              Add Endpoint
+            </Link>
+          </Button>
+        </CardHeader>
+        <CardContent className="p-0">
+          {endpointsWithStatus.length === 0 ? (
+            <div className="p-6">
+              <EmptyState
+                title="No endpoints yet"
+                description="Add an endpoint to start monitoring."
+                actionLabel="Add Endpoint"
+                actionHref={`/dashboard/projects/${projectId}/new-endpoint`}
+              />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-t text-muted-foreground">
+                    <th className="px-6 py-3 text-left font-medium">Name</th>
+                    <th className="px-6 py-3 text-left font-medium">URL</th>
+                    <th className="px-6 py-3 text-left font-medium">Status</th>
+                    <th className="px-6 py-3 text-right font-medium">
+                      Response
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {endpointsWithStatus.map((endpoint) => {
+                    const href = `/dashboard/projects/${projectId}/endpoints/${endpoint.id}`;
+                    return (
+                      <tr
+                        className="hover:bg-muted/50 transition-colors cursor-pointer"
+                        key={endpoint.id}
+                      >
+                        <td className="p-0">
+                          <Link
+                            href={href}
+                            className="block px-6 py-3.5 font-medium"
+                          >
+                            {endpoint.name}
+                          </Link>
+                        </td>
+                        <td className="p-0 text-muted-foreground">
+                          <Link href={href} className="block px-6 py-3.5">
+                            <span className="inline-block max-w-[240px] truncate">
+                              {endpoint.url}
+                            </span>
+                          </Link>
+                        </td>
+                        <td className="p-0">
+                          <Link href={href} className="block px-6 py-3.5">
+                            <StatusBadge status={endpoint.currentStatus} />
+                          </Link>
+                        </td>
+                        <td className="p-0 text-right text-muted-foreground">
+                          <Link href={href} className="block px-6 py-3.5">
+                            {endpoint.responseTime !== null
+                              ? `${endpoint.responseTime}ms`
+                              : "—"}
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      {endpointsWithStatus.length === 0 ? (
-        <EmptyState
-          title="No endpoints yet"
-          description="Add an endpoint to start monitoring."
-          actionLabel="Add Endpoint"
-          actionHref={`/dashboard/projects/${projectId}/new-endpoint`}
-        />
-      ) : (
-        <div className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800">
-          <table className="w-full text-sm">
-            <thead className="bg-zinc-50 dark:bg-zinc-900">
-              <tr>
-                <th className="px-4 py-2.5 text-left font-medium text-zinc-500 dark:text-zinc-400">
-                  Name
-                </th>
-                <th className="px-4 py-2.5 text-left font-medium text-zinc-500 dark:text-zinc-400">
-                  URL
-                </th>
-                <th className="px-4 py-2.5 text-left font-medium text-zinc-500 dark:text-zinc-400">
-                  Status
-                </th>
-                <th className="px-4 py-2.5 text-right font-medium text-zinc-500 dark:text-zinc-400">
-                  Response
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
-              {endpointsWithStatus.map((endpoint) => (
-                <tr key={endpoint.id} className="bg-white dark:bg-zinc-950">
-                  <td className="px-4 py-3">
-                    <Link
-                      href={`/dashboard/projects/${projectId}/endpoints/${endpoint.id}`}
-                      className="font-medium text-zinc-900 hover:underline dark:text-zinc-50"
-                    >
-                      {endpoint.name}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-zinc-500 dark:text-zinc-400">
-                    <span className="inline-block max-w-[200px] truncate">
-                      {endpoint.url}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={endpoint.currentStatus} />
-                  </td>
-                  <td className="px-4 py-3 text-right text-zinc-500 dark:text-zinc-400">
-                    {endpoint.responseTime !== null
-                      ? `${endpoint.responseTime}ms`
-                      : "—"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <div className="mt-8">
-        <h2 className="mb-4 text-sm font-medium text-zinc-500 dark:text-zinc-400">
-          Notifications
-        </h2>
-        <NotificationSettings
-          projectId={projectId}
-          userEmail={session.user.email}
-        />
-      </div>
+      {/* Notifications */}
+      <Card className="mt-6">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-base">Notifications</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <NotificationSettings
+            projectId={projectId}
+            userEmail={session.user.email}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }

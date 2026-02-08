@@ -4,8 +4,11 @@ import { PingStatus } from "@/lib/generated/prisma";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { Plus, Globe } from "lucide-react";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -21,7 +24,6 @@ export default async function DashboardPage() {
     orderBy: { createdAt: "desc" },
   });
 
-  // Get latest ping status for each project's endpoints
   const projectsWithStatus = await Promise.all(
     projects.map(async (project) => {
       if (project.endpoints.length === 0) {
@@ -60,15 +62,18 @@ export default async function DashboardPage() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
-          Projects
-        </h1>
-        <Link
-          href="/dashboard/new-project"
-          className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
-        >
-          New Project
-        </Link>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Projects</h1>
+          <p className="text-sm text-muted-foreground">
+            Manage your monitored services
+          </p>
+        </div>
+        <Button asChild>
+          <Link href="/dashboard/new-project">
+            <Plus className="mr-2 h-4 w-4" />
+            New Project
+          </Link>
+        </Button>
       </div>
 
       {projectsWithStatus.length === 0 ? (
@@ -84,25 +89,34 @@ export default async function DashboardPage() {
             <Link
               key={project.id}
               href={`/dashboard/projects/${project.id}`}
-              className="rounded-lg border border-zinc-200 bg-white p-4 transition-colors hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"
+              className="group"
             >
-              <div className="flex items-start justify-between">
-                <div>
-                  <h2 className="font-medium text-zinc-900 dark:text-zinc-50">
-                    {project.name}
-                  </h2>
-                  {project.description && (
-                    <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                      {project.description}
-                    </p>
-                  )}
-                </div>
-                <StatusBadge status={project.overallStatus} />
-              </div>
-              <p className="mt-3 text-xs text-zinc-400 dark:text-zinc-500">
-                {project.endpointCount} endpoint
-                {project.endpointCount !== 1 ? "s" : ""}
-              </p>
+              <Card className="transition-all hover:shadow-md hover:border-border/80 group-hover:-translate-y-0.5">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+                        <Globe className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <h2 className="font-semibold">{project.name}</h2>
+                        {project.description && (
+                          <p className="mt-0.5 text-sm text-muted-foreground line-clamp-1">
+                            {project.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <StatusBadge status={project.overallStatus} />
+                  </div>
+                  <div className="mt-4 flex items-center gap-4 text-xs text-muted-foreground">
+                    <span>
+                      {project.endpointCount} endpoint
+                      {project.endpointCount !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
             </Link>
           ))}
         </div>
