@@ -4,20 +4,36 @@ import { PingStatus } from "@/lib/generated/prisma";
 import { headers } from "next/headers";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
-import {
-  ChevronRight,
-  Pencil,
-  ArrowUpDown,
-  Clock,
-  Activity,
-} from "lucide-react";
+import { ArrowUpDown, Clock, Activity } from "lucide-react";
 import { StatusBadge } from "@/components/status-badge";
 import { ResponseTimeChart } from "@/components/response-time-chart";
 import { UptimeBar } from "@/components/uptime-bar";
-import { DeleteEndpointButton } from "./delete-endpoint-button";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EndpointActions } from "./endpoint-actions";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export default async function EndpointDetailPage({
   params,
@@ -102,200 +118,234 @@ export default async function EndpointDetailPage({
   }));
 
   return (
-    <div>
+    <div className="space-y-6">
       {/* Breadcrumb */}
-      <div className="mb-6">
-        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-          <Link
-            href="/dashboard"
-            className="hover:text-foreground transition-colors"
-          >
-            Projects
-          </Link>
-          <ChevronRight className="h-3.5 w-3.5" />
-          <Link
-            href={`/dashboard/projects/${projectId}`}
-            className="hover:text-foreground transition-colors"
-          >
-            {endpoint.project.name}
-          </Link>
-          <ChevronRight className="h-3.5 w-3.5" />
-          <span className="text-foreground font-medium">{endpoint.name}</span>
-        </div>
-        <div className="mt-3 flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold tracking-tight">
-                {endpoint.name}
-              </h1>
-              <StatusBadge status={latestPing?.status || null} />
-            </div>
-            <div className="mt-1.5 flex items-center gap-2 text-sm text-muted-foreground">
-              <Badge variant="secondary" className="font-mono text-xs">
-                {endpoint.method}
-              </Badge>
-              <span className="truncate max-w-md">{endpoint.url}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link
-                href={`/dashboard/projects/${projectId}/endpoints/${endpointId}/edit`}
-              >
-                <Pencil className="mr-1.5 h-3.5 w-3.5" />
-                Edit
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href="/dashboard">Projects</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href={`/dashboard/projects/${projectId}`}>
+                {endpoint.project.name}
               </Link>
-            </Button>
-            <DeleteEndpointButton
-              projectId={projectId}
-              endpointId={endpointId}
-            />
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{endpoint.name}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight">
+              {endpoint.name}
+            </h1>
+            <StatusBadge status={latestPing?.status || null} />
+          </div>
+          <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+            <Badge variant="secondary" className="font-mono text-xs">
+              {endpoint.method}
+            </Badge>
+            <span className="truncate max-w-md font-mono text-xs">
+              {endpoint.url}
+            </span>
           </div>
         </div>
+        <EndpointActions projectId={projectId} endpointId={endpointId} />
       </div>
+
+      <Separator />
 
       {/* Stats Cards */}
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card>
-          <CardContent className="p-5">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10">
-                <ArrowUpDown className="h-4 w-4 text-emerald-500" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Uptime (24h)</p>
-                <p className="text-2xl font-bold">{stats.uptime}%</p>
-              </div>
-            </div>
+          <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+            <CardDescription className="text-xs font-medium">
+              Uptime (24h)
+            </CardDescription>
+            <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{stats.uptime}%</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {stats.uptime >= 99
+                ? "All systems operational"
+                : stats.uptime >= 95
+                  ? "Minor issues detected"
+                  : "Degraded performance"}
+            </p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-5">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10">
-                <Clock className="h-4 w-4 text-blue-500" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Avg Response</p>
-                <p className="text-2xl font-bold">{stats.avgResponseTime}ms</p>
-              </div>
-            </div>
+          <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+            <CardDescription className="text-xs font-medium">
+              Avg Response
+            </CardDescription>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{stats.avgResponseTime}ms</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {stats.avgResponseTime < 200
+                ? "Excellent performance"
+                : stats.avgResponseTime < 500
+                  ? "Good performance"
+                  : "Slow response times"}
+            </p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-5">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-500/10">
-                <Activity className="h-4 w-4 text-violet-500" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Checks (24h)</p>
-                <p className="text-2xl font-bold">{stats.totalPings}</p>
-              </div>
-            </div>
+          <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+            <CardDescription className="text-xs font-medium">
+              Checks (24h)
+            </CardDescription>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{stats.totalPings}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Every {endpoint.checkInterval}s interval
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Charts */}
-      <div className="mb-6 space-y-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Response Time</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponseTimeChart data={chartData} />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">30-Day Uptime</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <UptimeBar days={uptimeDays} />
-          </CardContent>
-        </Card>
-      </div>
+      {/* Response Time Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Response Time</CardTitle>
+          <CardDescription>Last 24 hours of response times</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ResponseTimeChart data={chartData} />
+        </CardContent>
+      </Card>
+
+      {/* 30-Day Uptime */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">30-Day Uptime</CardTitle>
+          <CardDescription>
+            Daily uptime percentage over the last 30 days
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <UptimeBar days={uptimeDays} />
+        </CardContent>
+      </Card>
 
       {/* Incidents */}
       {incidents.length > 0 && (
-        <Card className="mb-6">
-          <CardHeader className="pb-4">
+        <Card>
+          <CardHeader>
             <CardTitle className="text-base">Recent Incidents</CardTitle>
+            <CardDescription>
+              {incidents.filter((i) => !i.resolvedAt).length} ongoing,{" "}
+              {incidents.filter((i) => i.resolvedAt).length} resolved
+            </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="divide-y">
-              {incidents.map((incident) => (
-                <div
-                  key={incident.id}
-                  className="flex items-center justify-between px-6 py-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`h-2 w-2 rounded-full ${incident.resolvedAt ? "bg-emerald-500" : "bg-red-500 animate-pulse"}`}
-                    />
-                    <span className="text-sm font-medium">
-                      {incident.resolvedAt ? "Resolved" : "Ongoing"}
-                    </span>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {incident.startedAt.toLocaleString()}
-                    {incident.resolvedAt &&
-                      ` — ${incident.resolvedAt.toLocaleString()}`}
-                  </div>
-                </div>
-              ))}
-            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="pl-6">Status</TableHead>
+                  <TableHead>Started</TableHead>
+                  <TableHead className="pr-6">Resolved</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {incidents.map((incident) => (
+                  <TableRow key={incident.id}>
+                    <TableCell className="pl-6">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`h-2 w-2 rounded-full ${incident.resolvedAt ? "bg-emerald-500" : "bg-red-500 animate-pulse"}`}
+                        />
+                        <Badge
+                          variant={
+                            incident.resolvedAt ? "secondary" : "destructive"
+                          }
+                          className="text-xs"
+                        >
+                          {incident.resolvedAt ? "Resolved" : "Ongoing"}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {incident.startedAt.toLocaleString()}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground pr-6">
+                      {incident.resolvedAt
+                        ? incident.resolvedAt.toLocaleString()
+                        : "—"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       )}
 
-      {/* Recent Pings Table */}
+      {/* Recent Pings */}
       <Card>
-        <CardHeader className="pb-4">
+        <CardHeader>
           <CardTitle className="text-base">Recent Pings</CardTitle>
+          <CardDescription>
+            Last {Math.min(recentPings.length, 20)} checks
+          </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           {recentPings.length === 0 ? (
-            <p className="px-6 pb-6 text-sm text-muted-foreground">
-              No pings recorded yet.
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-t text-muted-foreground">
-                    <th className="px-6 py-3 text-left font-medium">Status</th>
-                    <th className="px-6 py-3 text-left font-medium">Code</th>
-                    <th className="px-6 py-3 text-right font-medium">
-                      Response
-                    </th>
-                    <th className="px-6 py-3 text-right font-medium">Time</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {recentPings.slice(0, 20).map((ping) => (
-                    <tr
-                      key={ping.id.toString()}
-                      className="hover:bg-muted/50 transition-colors"
-                    >
-                      <td className="px-6 py-3">
-                        <StatusBadge status={ping.status} />
-                      </td>
-                      <td className="px-6 py-3 text-muted-foreground">
-                        {ping.statusCode ?? "—"}
-                      </td>
-                      <td className="px-6 py-3 text-right text-muted-foreground">
-                        {ping.responseTime}ms
-                      </td>
-                      <td className="px-6 py-3 text-right text-muted-foreground">
-                        {ping.checkedAt.toLocaleString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="flex items-center justify-center border-t py-12">
+              <p className="text-sm text-muted-foreground">
+                No pings recorded yet.
+              </p>
             </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="pl-6">Status</TableHead>
+                  <TableHead>Code</TableHead>
+                  <TableHead className="text-right">Response</TableHead>
+                  <TableHead className="text-right pr-6">Time</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recentPings.slice(0, 20).map((ping) => (
+                  <TableRow key={ping.id.toString()}>
+                    <TableCell className="pl-6">
+                      <StatusBadge status={ping.status} />
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="font-mono text-xs">
+                        {ping.statusCode ?? "—"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums text-muted-foreground">
+                      {ping.responseTime}ms
+                    </TableCell>
+                    <TableCell className="text-right pr-6 text-muted-foreground">
+                      {ping.checkedAt.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        second: "2-digit",
+                      })}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>

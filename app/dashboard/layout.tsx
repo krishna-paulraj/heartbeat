@@ -1,10 +1,11 @@
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { PingStatus } from "@/lib/generated/prisma";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { Activity, LayoutDashboard, Settings } from "lucide-react";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { UserNav } from "./user-nav";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SiteHeader } from "@/components/site-header";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export default async function DashboardLayout({
   children,
@@ -14,45 +15,66 @@ export default async function DashboardLayout({
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/sign-in");
 
+  const projects = await prisma.project.findMany({
+    where: { userId: session.user.id },
+    include: { endpoints: { select: { id: true } } },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const projectsWithStatus = await Promise.all(
+    projects.map(async (project) => {
+      if (project.endpoints.length === 0) {
+        return {
+          id: project.id,
+          name: project.name,
+          overallStatus: null as PingStatus | null,
+          endpointCount: 0,
+        };
+      }
+
+      const latestPings = await Promise.all(
+        project.endpoints.map((e) =>
+          prisma.ping.findFirst({
+            where: { endpointId: e.id },
+            orderBy: { checkedAt: "desc" },
+            select: { status: true },
+          }),
+        ),
+      );
+
+      const statuses = latestPings.filter(Boolean).map((p) => p!.status);
+      let overallStatus: PingStatus | null = null;
+      if (statuses.includes(PingStatus.DOWN)) overallStatus = PingStatus.DOWN;
+      else if (statuses.includes(PingStatus.DEGRADED))
+        overallStatus = PingStatus.DEGRADED;
+      else if (statuses.length > 0) overallStatus = PingStatus.UP;
+
+      return {
+        id: project.id,
+        name: project.name,
+        overallStatus,
+        endpointCount: project.endpoints.length,
+      };
+    }),
+  );
+
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          <div className="flex items-center gap-6">
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-2 text-base font-semibold"
-            >
-              <Activity className="h-5 w-5 text-emerald-500" />
-              Heartbeat
-            </Link>
-            <nav className="hidden items-center gap-1 sm:flex">
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-              >
-                <LayoutDashboard className="h-4 w-4" />
-                Projects
-              </Link>
-              <Link
-                href="/dashboard/settings"
-                className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-              >
-                <Settings className="h-4 w-4" />
-                Settings
-              </Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <UserNav
-              userName={session.user.name}
-              userEmail={session.user.email}
-            />
-          </div>
+    <SidebarProvider>
+      <AppSidebar
+        user={{
+          name: session.user.name,
+          email: session.user.email,
+        }}
+        projects={projectsWithStatus}
+      />
+      <SidebarInset>
+        <SiteHeader />
+        <div className="flex flex-1 flex-col">
+          <main className="mx-auto w-full max-w-5xl px-4 py-6 lg:px-8">
+            {children}
+          </main>
         </div>
-      </header>
-      <main className="mx-auto max-w-5xl px-4 py-8">{children}</main>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

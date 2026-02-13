@@ -1,53 +1,95 @@
 "use client";
 
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
+
 interface DataPoint {
   checkedAt: string;
   responseTime: number;
 }
 
+const chartConfig = {
+  responseTime: {
+    label: "Response Time",
+    color: "var(--color-chart-1)",
+  },
+} satisfies ChartConfig;
+
 export function ResponseTimeChart({ data }: { data: DataPoint[] }) {
   if (data.length === 0) {
     return (
-      <div className="flex h-48 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-800">
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">No data yet</p>
+      <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
+        No data yet
       </div>
     );
   }
 
-  const maxTime = Math.max(...data.map((d) => d.responseTime), 1);
-  const height = 192;
-  const width = 100; // percentage-based
-  const padding = 4;
-
-  const points = data
-    .map((d, i) => {
-      const x = (i / Math.max(data.length - 1, 1)) * (width - padding * 2) + padding;
-      const y = height - (d.responseTime / maxTime) * (height - 32) - 16;
-      return `${x},${y}`;
-    })
-    .join(" ");
+  const formatted = data.map((d) => ({
+    time: new Date(d.checkedAt).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+    responseTime: d.responseTime,
+  }));
 
   return (
-    <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">Response Time</span>
-        <span className="text-xs text-zinc-400 dark:text-zinc-500">{maxTime}ms max</span>
-      </div>
-      <svg viewBox={`0 0 ${width} ${height}`} className="h-48 w-full" preserveAspectRatio="none">
-        <polyline
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="0.5"
-          className="text-emerald-500"
-          points={points}
+    <ChartContainer config={chartConfig} className="h-48 w-full">
+      <AreaChart
+        data={formatted}
+        margin={{ top: 4, right: 4, bottom: 0, left: 0 }}
+      >
+        <defs>
+          <linearGradient id="fillResponseTime" x1="0" y1="0" x2="0" y2="1">
+            <stop
+              offset="0%"
+              stopColor="var(--color-responseTime)"
+              stopOpacity={0.3}
+            />
+            <stop
+              offset="100%"
+              stopColor="var(--color-responseTime)"
+              stopOpacity={0.02}
+            />
+          </linearGradient>
+        </defs>
+        <CartesianGrid vertical={false} strokeDasharray="3 3" />
+        <XAxis
+          dataKey="time"
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+          fontSize={11}
+          interval="preserveStartEnd"
         />
-        {/* Fill area under line */}
-        <polygon
-          className="text-emerald-500/10"
-          fill="currentColor"
-          points={`${padding},${height - 16} ${points} ${width - padding},${height - 16}`}
+        <YAxis
+          tickLine={false}
+          axisLine={false}
+          tickMargin={8}
+          fontSize={11}
+          tickFormatter={(v) => `${v}ms`}
+          width={50}
         />
-      </svg>
-    </div>
+        <ChartTooltip
+          content={
+            <ChartTooltipContent
+              labelFormatter={(value) => value}
+              formatter={(value) => [`${value}ms`, "Response Time"]}
+            />
+          }
+        />
+        <Area
+          type="monotone"
+          dataKey="responseTime"
+          stroke="var(--color-responseTime)"
+          strokeWidth={2}
+          fill="url(#fillResponseTime)"
+        />
+      </AreaChart>
+    </ChartContainer>
   );
 }

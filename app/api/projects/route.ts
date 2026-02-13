@@ -5,7 +5,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const projects = await prisma.project.findMany({
     where: { userId: session.user.id },
@@ -20,13 +21,24 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();
   const { name, description } = body;
 
   if (!name || typeof name !== "string") {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
+  }
+
+  const projectCount = await prisma.project.count({
+    where: { userId: session.user.id },
+  });
+  if (projectCount >= 2) {
+    return NextResponse.json(
+      { error: "You can create a maximum of 2 projects" },
+      { status: 403 },
+    );
   }
 
   const project = await prisma.project.create({

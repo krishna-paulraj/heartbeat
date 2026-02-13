@@ -5,16 +5,18 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ projectId: string }> }
+  { params }: { params: Promise<{ projectId: string }> },
 ) {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { projectId } = await params;
   const project = await prisma.project.findFirst({
     where: { id: projectId, userId: session.user.id },
   });
-  if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!project)
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const endpoints = await prisma.endpoint.findMany({
     where: { projectId },
@@ -26,16 +28,18 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ projectId: string }> }
+  { params }: { params: Promise<{ projectId: string }> },
 ) {
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { projectId } = await params;
   const project = await prisma.project.findFirst({
     where: { id: projectId, userId: session.user.id },
   });
-  if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!project)
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   const body = await request.json();
   const { url, name, method, checkInterval } = body;
@@ -45,6 +49,16 @@ export async function POST(
   }
   if (!name || typeof name !== "string") {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
+  }
+
+  const endpointCount = await prisma.endpoint.count({
+    where: { projectId },
+  });
+  if (endpointCount >= 5) {
+    return NextResponse.json(
+      { error: "You can create a maximum of 5 endpoints per project" },
+      { status: 403 },
+    );
   }
 
   const endpoint = await prisma.endpoint.create({

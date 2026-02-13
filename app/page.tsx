@@ -1,93 +1,192 @@
 import Link from "next/link";
-import { Activity, Server, Bell, BarChart3 } from "lucide-react";
+import {
+  Activity,
+  Server,
+  Bell,
+  BarChart3,
+  ArrowRight,
+  Check,
+  Zap,
+  Shield,
+  Globe,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { FadeIn, FadeInStagger, FadeInStaggerItem } from "@/components/motion";
+import {
+  FadeIn,
+  FadeInView,
+  FadeInStagger,
+  FadeInStaggerItem,
+  ScaleIn,
+} from "@/components/motion";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  const isLoggedIn = !!session;
+
   return (
     <div className="min-h-screen bg-background">
       {/* Nav */}
-      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
+      <header className="sticky top-0 z-50 border-b border-border/40 bg-background/60 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
           <Link
             href="/"
-            className="flex items-center gap-2 text-base font-semibold"
+            className="flex items-center gap-2.5 text-base font-semibold tracking-tight"
           >
-            <Activity className="h-5 w-5 text-emerald-500" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10">
+              <Activity className="h-4 w-4 text-emerald-500" />
+            </div>
             Heartbeat
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <ThemeToggle />
-            <Button variant="ghost" size="sm" asChild>
-              <Link href="/sign-in">Sign in</Link>
-            </Button>
-            <Button size="sm" asChild>
-              <Link href="/sign-up">Get Started</Link>
-            </Button>
+            {isLoggedIn ? (
+              <Button size="sm" className="rounded-full px-4" asChild>
+                <Link href="/dashboard">
+                  Dashboard
+                  <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                </Link>
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full px-4"
+                  asChild
+                >
+                  <Link href="/sign-in">Sign in</Link>
+                </Button>
+                <Button size="sm" className="rounded-full px-4" asChild>
+                  <Link href="/sign-up">Get Started</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>
 
       {/* Hero */}
-      <section className="mx-auto max-w-5xl px-4 pt-24 pb-20 sm:pt-32 sm:pb-28">
-        <FadeIn className="mx-auto max-w-2xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1 text-sm text-muted-foreground">
-            <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            All systems operational
-          </div>
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            Monitor your endpoints.
-            <br />
-            <span className="text-muted-foreground">
-              Get alerted instantly.
-            </span>
-          </h1>
-          <p className="mt-6 text-lg leading-8 text-muted-foreground">
-            Know when your services go down before your users do. Heartbeat
-            monitors your HTTP endpoints around the clock and sends you instant
-            alerts the moment something breaks.
-          </p>
-          <div className="mt-10 flex items-center justify-center gap-4">
-            <Button size="lg" asChild>
-              <Link href="/sign-up">Start Monitoring</Link>
-            </Button>
-            <Button size="lg" variant="outline" asChild>
-              <Link href="/sign-in">Sign in</Link>
-            </Button>
-          </div>
-        </FadeIn>
+      <section className="relative overflow-hidden">
+        {/* Background glow */}
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 h-[600px] w-[600px] rounded-full bg-emerald-500/8 blur-[120px]" />
+          <div className="absolute right-0 top-1/3 h-[400px] w-[400px] rounded-full bg-emerald-500/5 blur-[100px]" />
+        </div>
+
+        <div className="mx-auto max-w-6xl px-6 pt-24 pb-20 sm:pt-36 sm:pb-32">
+          <FadeIn className="mx-auto max-w-3xl text-center">
+            {/* Status pill */}
+            <div className="mb-8 inline-flex items-center gap-2.5 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-4 py-1.5 text-sm font-medium text-emerald-600 dark:text-emerald-400 backdrop-blur-sm">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+              </span>
+              All systems operational
+            </div>
+
+            {/* Headline */}
+            <h1 className="text-5xl font-bold tracking-tight sm:text-7xl">
+              Know Before
+              <br />
+              <span className="bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 bg-clip-text text-transparent">
+                Your Users Do
+              </span>
+            </h1>
+
+            {/* Subheadline */}
+            <p className="mx-auto mt-8 max-w-xl text-lg leading-relaxed text-muted-foreground sm:text-xl">
+              Heartbeat monitors your endpoints around the clock and alerts you
+              the instant something breaks. Simple, fast, reliable.
+            </p>
+
+            {/* CTA */}
+            <div className="mt-12 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+              {isLoggedIn ? (
+                <Button
+                  size="lg"
+                  className="h-12 rounded-full px-8 text-base shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-shadow"
+                  asChild
+                >
+                  <Link href="/dashboard">
+                    Go to Dashboard
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    size="lg"
+                    className="h-12 rounded-full px-8 text-base shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-shadow"
+                    asChild
+                  >
+                    <Link href="/sign-up">
+                      Start Monitoring Free
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="h-12 rounded-full px-8 text-base border-border/60"
+                    asChild
+                  >
+                    <Link href="/sign-in">Sign in</Link>
+                  </Button>
+                </>
+              )}
+            </div>
+
+            {/* Trust signals */}
+            <div className="mt-10 flex items-center justify-center gap-6 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <Check className="h-3.5 w-3.5 text-emerald-500" />
+                Free to start
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Check className="h-3.5 w-3.5 text-emerald-500" />
+                No credit card
+              </span>
+              <span className="flex items-center gap-1.5">
+                <Check className="h-3.5 w-3.5 text-emerald-500" />
+                Setup in 30s
+              </span>
+            </div>
+          </FadeIn>
+        </div>
       </section>
 
       {/* Dashboard Preview */}
-      <section className="mx-auto max-w-5xl px-4 pb-20">
-        <FadeIn delay={0.2}>
-          <div className="overflow-hidden rounded-xl border bg-card shadow-xl">
-            <div className="flex items-center gap-2 border-b px-4 py-3">
-              <div className="h-3 w-3 rounded-full bg-red-400" />
-              <div className="h-3 w-3 rounded-full bg-yellow-400" />
-              <div className="h-3 w-3 rounded-full bg-emerald-400" />
-              <span className="ml-3 text-xs text-muted-foreground">
-                heartbeat dashboard
+      <section className="mx-auto max-w-6xl px-6 pb-28">
+        <ScaleIn>
+          <div className="overflow-hidden rounded-2xl border border-border/60 bg-card/80 shadow-2xl shadow-black/5 dark:shadow-black/20 backdrop-blur-sm">
+            <div className="flex items-center gap-2 border-b border-border/40 px-5 py-3.5">
+              <div className="h-3 w-3 rounded-full bg-red-400/80" />
+              <div className="h-3 w-3 rounded-full bg-yellow-400/80" />
+              <div className="h-3 w-3 rounded-full bg-emerald-400/80" />
+              <span className="ml-4 text-xs font-medium text-muted-foreground/60">
+                heartbeat &mdash; dashboard
               </span>
             </div>
-            <div className="p-1">
+            <div className="p-2">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-left text-muted-foreground">
-                    <th className="px-4 py-2.5 font-medium">Endpoint</th>
-                    <th className="px-4 py-2.5 font-medium">URL</th>
-                    <th className="px-4 py-2.5 font-medium">Status</th>
-                    <th className="px-4 py-2.5 text-right font-medium">
+                  <tr className="text-left text-muted-foreground/70">
+                    <th className="px-4 py-3 font-medium">Endpoint</th>
+                    <th className="px-4 py-3 font-medium">URL</th>
+                    <th className="px-4 py-3 font-medium">Status</th>
+                    <th className="px-4 py-3 text-right font-medium">
                       Response
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y">
+                <tbody className="divide-y divide-border/40">
                   {[
                     {
                       name: "Production API",
-                      url: "api.example.com",
+                      url: "api.example.com/health",
                       status: "UP",
                       time: "124ms",
                     },
@@ -99,41 +198,44 @@ export default function Home() {
                     },
                     {
                       name: "Payment Service",
-                      url: "pay.example.com",
+                      url: "pay.example.com/status",
                       status: "DOWN",
                       time: "—",
                     },
                     {
                       name: "Auth Server",
-                      url: "auth.example.com",
+                      url: "auth.example.com/ping",
                       status: "UP",
                       time: "203ms",
                     },
                   ].map((row) => (
-                    <tr key={row.name}>
-                      <td className="px-4 py-3 font-medium">{row.name}</td>
-                      <td className="px-4 py-3 text-muted-foreground">
+                    <tr
+                      key={row.name}
+                      className="transition-colors hover:bg-muted/30"
+                    >
+                      <td className="px-4 py-3.5 font-medium">{row.name}</td>
+                      <td className="px-4 py-3.5 font-mono text-xs text-muted-foreground">
                         {row.url}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3.5">
                         <span
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${
+                          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${
                             row.status === "UP"
-                              ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                              : "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400"
+                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                              : "bg-red-500/10 text-red-600 dark:text-red-400"
                           }`}
                         >
                           <span
                             className={`h-1.5 w-1.5 rounded-full ${
                               row.status === "UP"
                                 ? "bg-emerald-500"
-                                : "bg-red-500"
+                                : "bg-red-500 animate-pulse"
                             }`}
                           />
-                          {row.status}
+                          {row.status === "UP" ? "Operational" : "Down"}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right text-muted-foreground">
+                      <td className="px-4 py-3.5 text-right font-mono text-xs tabular-nums text-muted-foreground">
                         {row.time}
                       </td>
                     </tr>
@@ -142,137 +244,94 @@ export default function Home() {
               </table>
             </div>
           </div>
-        </FadeIn>
-      </section>
-
-      {/* Features */}
-      <section className="border-t bg-card py-20">
-        <div className="mx-auto max-w-5xl px-4">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              Everything you need to stay online
-            </h2>
-            <p className="mt-3 text-base text-muted-foreground">
-              Simple, reliable monitoring without the complexity.
-            </p>
-          </div>
-          <FadeInStagger className="mt-14 grid gap-6 sm:grid-cols-3">
-            {[
-              {
-                icon: Server,
-                title: "Uptime Monitoring",
-                description:
-                  "Monitor any HTTP endpoint with configurable check intervals. Support for GET, POST, and HEAD requests.",
-              },
-              {
-                icon: Bell,
-                title: "Instant Alerts",
-                description:
-                  "Get notified via email the moment an endpoint goes down. Recovery alerts when services come back online.",
-              },
-              {
-                icon: BarChart3,
-                title: "Incident Tracking",
-                description:
-                  "Automatic incident creation when downtime is detected. Track duration, resolution time, and uptime history.",
-              },
-            ].map((feature) => (
-              <FadeInStaggerItem key={feature.title}>
-                <div className="rounded-xl border bg-background p-6 transition-shadow hover:shadow-md">
-                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                    <feature.icon className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-sm font-semibold">{feature.title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                    {feature.description}
-                  </p>
-                </div>
-              </FadeInStaggerItem>
-            ))}
-          </FadeInStagger>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="border-t py-20">
-        <div className="mx-auto max-w-5xl px-4">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-              Up and running in minutes
-            </h2>
-            <p className="mt-3 text-base text-muted-foreground">
-              Three simple steps to never miss downtime again.
-            </p>
-          </div>
-          <FadeInStagger className="mt-14 grid gap-8 sm:grid-cols-3">
-            {[
-              {
-                step: "1",
-                title: "Add your endpoints",
-                description:
-                  "Enter the URLs you want to monitor and configure check intervals.",
-              },
-              {
-                step: "2",
-                title: "We monitor 24/7",
-                description:
-                  "Heartbeat checks your endpoints around the clock and tracks response times.",
-              },
-              {
-                step: "3",
-                title: "Get alerted",
-                description:
-                  "Receive instant email notifications when something goes down and when it recovers.",
-              },
-            ].map((item) => (
-              <FadeInStaggerItem key={item.step} className="text-center">
-                <div className="mx-auto mb-4 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
-                  {item.step}
-                </div>
-                <h3 className="text-sm font-semibold">{item.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {item.description}
-                </p>
-              </FadeInStaggerItem>
-            ))}
-          </FadeInStagger>
-        </div>
+        </ScaleIn>
       </section>
 
       {/* CTA */}
-      <section className="border-t bg-card py-20">
-        <div className="mx-auto max-w-5xl px-4 text-center">
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            Start monitoring in seconds
-          </h2>
-          <p className="mt-3 text-base text-muted-foreground">
-            Free to get started. No credit card required.
-          </p>
-          <div className="mt-8">
-            <Button size="lg" asChild>
-              <Link href="/sign-up">Create your account</Link>
-            </Button>
-          </div>
+      <section className="border-t border-border/40 py-28">
+        <div className="mx-auto max-w-6xl px-6">
+          <FadeInView>
+            <div className="relative overflow-hidden rounded-3xl border border-border/50 bg-card/80 px-8 py-20 text-center backdrop-blur-sm sm:px-16">
+              {/* Background glow */}
+              <div className="pointer-events-none absolute inset-0 -z-10">
+                <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[300px] w-[300px] rounded-full bg-emerald-500/8 blur-[80px]" />
+              </div>
+
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                Start monitoring in seconds
+              </h2>
+              <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-muted-foreground">
+                Free to get started. No credit card required. Set up your first
+                monitor in under a minute.
+              </p>
+              <div className="mt-10">
+                <Button
+                  size="lg"
+                  className="h-12 rounded-full px-8 text-base shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-shadow"
+                  asChild
+                >
+                  <Link href={isLoggedIn ? "/dashboard" : "/sign-up"}>
+                    {isLoggedIn ? "Go to Dashboard" : "Get Started Free"}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </FadeInView>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-6">
-          <span className="text-sm text-muted-foreground">Heartbeat</span>
-          <div className="flex items-center gap-4">
-            <Link
-              href="/sign-in"
+      <footer className="border-t border-border/40">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-8">
+          <div className="flex items-center gap-2.5 text-sm text-muted-foreground">
+            <Activity className="h-4 w-4 text-emerald-500" />
+            <span>Heartbeat</span>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            <a
+              href="https://x.com/thedevkrish"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-foreground hover:text-emerald-500 transition-colors"
+            >
+              Suresh Krishna
+            </a>
+          </p>
+          <div className="flex items-center gap-6">
+            <a
+              href="https://x.com/thedevkrish"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
-              Sign in
-            </Link>
-            <Link
-              href="/sign-up"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Sign up
-            </Link>
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+              </svg>
+            </a>
+            {isLoggedIn ? (
+              <Link
+                href="/dashboard"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/sign-in"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  href="/sign-up"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Sign up
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </footer>
